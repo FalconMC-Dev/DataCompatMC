@@ -1,3 +1,4 @@
+use anyhow::Context;
 use clap::{Parser, Subcommand};
 use blocks::intermediary::IntermediaryCommand;
 
@@ -16,14 +17,12 @@ pub enum SubCommands {
     Intermediary(IntermediaryCommand),
 }
 
-fn main() {
+fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
         SubCommands::Intermediary(cmd) => {
-            if let Err(error) = cmd.generate_intermediate() {
-                eprintln!("Error while generating data: {}", error);
-            }
+            cmd.generate_intermediate().with_context(|| "Error while generating data")
         }
     }
 }

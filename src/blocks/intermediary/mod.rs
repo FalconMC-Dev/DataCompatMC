@@ -1,9 +1,10 @@
-use std::path::PathBuf;
-
 use clap::Args;
 use anyhow::Result;
+use crate::blocks::intermediary::data::ModernBlockList;
 
-use crate::util::file::OutputFile;
+use crate::util::file::{InputFile, OutputFile};
+
+pub mod data;
 
 #[derive(Args, Debug)]
 /// Generates intermediate data
@@ -13,15 +14,19 @@ use crate::util::file::OutputFile;
 /// minimize the size in a lossless manner. To avoid property collisions between
 /// blocks, a rules file can be specified (property collisions fail!).
 pub struct IntermediaryCommand {
-    /// Input file
-    input: PathBuf,
+    #[clap(flatten)]
+    input: InputFile,
     #[clap(flatten)]
     output: OutputFile,
 }
 
 impl IntermediaryCommand {
     pub fn generate_intermediate(&self) -> Result<()> {
-
+        let data: ModernBlockList = self.input.data()?;
+        /*if let Some(data) = data.iter().nth(4) {
+            println!("data: {:?}", data);
+        }*/
+        eprintln!("found {} blocks and {} properties!", data.blocks.len(), data.properties.len());
         Ok(())
     }
 }
