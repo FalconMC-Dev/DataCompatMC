@@ -21,7 +21,7 @@ impl OutputFile {
                 return Ok(None);
             }
         }
-        Ok(Some(OpenOptions::new().create(true).write(true).open(&self.output)?))
+        Ok(Some(OpenOptions::new().create(true).write(true).truncate(true).open(&self.output)?))
     }
 }
 
