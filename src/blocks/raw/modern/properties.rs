@@ -1,5 +1,6 @@
 use std::fmt::{Display, Formatter};
 use std::ops::Range;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum PropertyKind<'raw> {
@@ -37,8 +38,9 @@ impl<'raw> Display for PropertyKind<'raw> {
     }
 }
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Deserialize, Serialize)]
 pub struct EnumProperty<'raw> {
+    #[serde(borrow)]
     values: Vec<&'raw str>,
 }
 
@@ -51,5 +53,9 @@ impl<'raw> EnumProperty<'raw> {
 
     pub fn fields<'b>(&'b self) -> &'b [&'raw str] {
         &self.values
+    }
+
+    pub fn fields_owned(self) -> Vec<&'raw str> {
+        self.values
     }
 }

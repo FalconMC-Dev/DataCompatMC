@@ -1,7 +1,8 @@
+use std::io;
 use std::path::PathBuf;
+use std::str::FromStr;
 use anyhow::Context;
 
-use clap::{Arg, ArgMatches, Args, Command, Error, ErrorKind, FromArgMatches};
 use serde::Deserialize;
 
 #[derive(Debug)]
@@ -22,41 +23,15 @@ impl InputFile {
     }
 }
 
-impl FromArgMatches for InputFile {
-    fn from_arg_matches(matches: &ArgMatches) -> Result<Self, Error> {
-        let file_name = PathBuf::from(matches.value_of_os("INPUT").ok_or(Error::raw(ErrorKind::EmptyValue, "No INPUT provided"))?);
-        let contents = std::fs::read_to_string(&file_name)?;
-        // thread::sleep(Duration::from_millis(500));
+impl FromStr for InputFile {
+    type Err = io::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let name = PathBuf::from(s);
+        let contents = std::fs::read_to_string(&name)?;
         Ok(Self {
-            name: file_name,
+            name,
             contents,
         })
-    }
-
-    fn update_from_arg_matches(&mut self, matches: &ArgMatches) -> Result<(), Error> {
-        let file_name = PathBuf::from(matches.value_of_os("INPUT").ok_or(Error::raw(ErrorKind::EmptyValue, "No INPUT provided"))?);
-        let contents = std::fs::read_to_string(&file_name)?;
-        // thread::sleep(Duration::from_millis(500));
-        self.name = file_name;
-        self.contents = contents;
-        Ok(())
-    }
-}
-
-impl Args for InputFile {
-    fn augment_args(cmd: Command<'_>) -> Command<'_> {
-        cmd.arg(Arg::new("INPUT")
-            .help("Input file")
-            .required(true)
-            .takes_value(true)
-            .allow_invalid_utf8(true))
-    }
-
-    fn augment_args_for_update(cmd: Command<'_>) -> Command<'_> {
-        cmd.arg(Arg::new("INPUT")
-            .help("Input file")
-            .required(true)
-            .takes_value(true)
-            .allow_invalid_utf8(true))
     }
 }

@@ -3,12 +3,12 @@ use ahash::RandomState;
 use hashlink::LinkedHashMap;
 use serde::{de, Deserialize, Deserializer};
 use serde::de::{MapAccess, Visitor};
-use crate::blocks::intermediary::data::{ModernBlockData, ModernBlockList};
+use super::{RawBlockData, RawBlockList};
 use crate::blocks::raw::modern::PropertyKind;
 use crate::util::identifier::Identifier;
 
 #[derive(Deserialize)]
-struct RawBlockData<'raw> {
+struct RawData<'raw> {
     #[serde(borrow)]
     properties: Option<LinkedHashMap<&'raw str, Vec<&'raw str>, RandomState>>,
     #[serde(borrow)]
@@ -23,12 +23,12 @@ struct RawBlockState<'raw> {
     default: Option<bool>,
 }
 
-impl<'raw, 'de: 'raw> Deserialize<'de> for ModernBlockList<'raw> {
+impl<'raw, 'de: 'raw> Deserialize<'de> for RawBlockList<'raw> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de>
     {
         struct BlockListVisitor;
         impl<'de> Visitor<'de> for BlockListVisitor {
-            type Value = ModernBlockList<'de>;
+            type Value = RawBlockList<'de>;
 
             fn expecting(&self, formatter: &mut Formatter) -> std::fmt::Result {
                 write!(formatter, "a 1.13+ generated block list from minecraft")
@@ -38,17 +38,18 @@ impl<'raw, 'de: 'raw> Deserialize<'de> for ModernBlockList<'raw> {
                 let mut properties = Vec::new();
                 let mut blocks = LinkedHashMap::with_capacity(map.size_hint().unwrap_or(0));
 
-                while let Some((identifier, raw_block)) = map.next_entry::<Identifier<'de>, RawBlockData<'de>>()? {
+                while let Some((identifier, raw_block)) = map.next_entry::<Identifier<'de>, RawData<'de>>()? {
                     let mut local_properties = None;
                     let base_id = raw_block.states.get(0).ok_or(de::Error::invalid_length(0, &"a non-empty blockstate list"))?.id;
                     let default = if let Some(props) = &raw_block.properties {
-                        let mut local = LinkedHashMap::new();
+                        let mut local = Vec::with_capacity(props.len());
                         for (&name, values) in props {
+                            let name = if name == "type" { "kind" } else { name };
                             let kind = PropertyKind::from(values.as_slice());
                             if !properties.iter().any(|(n, k)| *n == name && *k == kind) {
                                 properties.push((name, kind.clone()));
                             }
-                            local.insert(name, kind);
+                            local.push(((name, None), kind));
                         }
                         local_properties = Some(local);
 
@@ -83,10 +84,10 @@ impl<'raw, 'de: 'raw> Deserialize<'de> for ModernBlockList<'raw> {
                     } else {
                         base_id
                     };
-                    blocks.insert(identifier, ModernBlockData::new(local_properties, base_id, default));
+                    blocks.insert(identifier, RawBlockData::new(local_properties, base_id, default));
                 }
 
-                Ok(ModernBlockList::new(properties, blocks))
+                Ok(RawBlockList::new(properties, blocks))
             }
         }
         deserializer.deserialize_map(BlockListVisitor)
