@@ -21,6 +21,10 @@ impl<'raw> ModernBlockList<'raw> {
             blocks,
         }
     }
+
+    pub fn properties(&self) -> &LinkedHashMap<&'raw str, Vec<&'raw str>> {
+        &self.properties
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
