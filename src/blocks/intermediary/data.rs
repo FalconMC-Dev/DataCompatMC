@@ -25,6 +25,10 @@ impl<'raw> ModernBlockList<'raw> {
     pub fn properties(&self) -> &LinkedHashMap<&'raw str, Vec<&'raw str>> {
         &self.properties
     }
+
+    pub fn blocks(&self) -> &LinkedHashMap<Identifier<'raw>, ModernBlockData<'raw>, RandomState> {
+        &self.blocks
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -45,6 +49,14 @@ impl<'raw> ModernBlockData<'raw> {
             default_id
         }
     }
+
+    pub fn properties(&self) -> Option<&LinkedHashMap<&'raw str, TextOrRange<'raw>, RandomState>> {
+        self.kinds.as_ref()
+    }
+
+    pub fn base_id(&self) -> i32 {
+        self.base_id
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -62,5 +74,44 @@ impl<'raw> TextOrRange<'raw> {
     
     pub fn range(start: i32, end: i32) -> Self {
         Self::Range([start, end])
+    }
+
+    pub fn is_bool(&self) -> bool {
+        matches!(self, TextOrRange::Text(val) if val == &"bool")
+    }
+
+    pub fn is_enum(&self) -> bool {
+        matches!(self, TextOrRange::Text(val) if val != &"bool")
+    }
+
+    pub fn is_range(&self) -> bool {
+        matches!(self, TextOrRange::Range(_))
+    }
+
+    pub fn get_enum(&self) -> Option<&'raw str> {
+        match self {
+            TextOrRange::Text(val) if val != &"bool" => {
+                Some(val)
+            }
+            _ => None
+        }
+    }
+}
+
+impl<'raw> PartialEq for TextOrRange<'raw> {
+    fn eq(&self, other: &Self) -> bool {
+        match self {
+            TextOrRange::Text(val) => {
+                if let Self::Text(other) = other {
+                    return val == other;
+                }
+            }
+            TextOrRange::Range(range) => {
+                if let Self::Range(other) = other {
+                    return range == other;
+                }
+            }
+        }
+        false
     }
 }

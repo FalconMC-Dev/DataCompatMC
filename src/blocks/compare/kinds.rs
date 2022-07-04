@@ -1,14 +1,16 @@
+use crate::blocks::intermediary::data::ModernBlockData;
+
 #[derive(Debug)]
 pub enum PropertyComparison {
-    /// The base is equal to the target property -> 100% compatible
+    /// The base is equal to the target property -> compatible
     Equal,
-    /// The base has less elements than the target property -> 100% compatible
+    /// The base has less elements than the target property -> compatible
     MissingEnd,
-    /// The base has more elements than the target property -> not compatible
+    /// The base has more elements than the target property -> incompatible
     LongerEnd,
-    /// The order of the base elements is different from the target property -> 100% compatible
+    /// The order of the base elements is different from the target property -> compatible
     DifferentOrdering,
-    /// The values (and maybe ordering) of the base elements is different from the target property -> not compatible
+    /// The values (and maybe ordering) of the base elements is different from the target property -> incompatible
     DifferentValues,
 }
 
@@ -26,7 +28,7 @@ impl PropertyComparison {
                     last_index += 1;
                 }
             }
-            if last_index == base.len() {
+            if last_index == base.len() || last_index == target.len() {
                 return if target.len() > base.len() {
                     Self::MissingEnd
                 } else {
@@ -39,6 +41,63 @@ impl PropertyComparison {
                 }
             }
             Self::DifferentOrdering
+        }
+    }
+}
+
+#[derive(Debug)]
+pub enum BlockComparison {
+    /// The base properties equal to the target -> compatible
+    Equal,
+    /// The base has one or more different types from the target -> incompatible
+    DifferentType,
+    /// The base has a different enum type from the target -> maybe compatible
+    DifferentEnum,
+    /// The base has a different range from the target -> maybe compatible
+    DifferentRange,
+    /// The base has more properties than the target -> compatible
+    MoreProperties,
+    /// The base has less properties than the target -> incompatible
+    LessProperties,
+    /// If all else fails, this usually means the properties would be in a different order,
+    /// sometimes compatible, sometimes incompatible
+    DifferentOrder,
+}
+
+impl BlockComparison {
+    pub fn compare<'raw>(base: &ModernBlockData<'raw>, target: &ModernBlockData<'raw>) -> Self {
+        if base.properties() == target.properties() {
+            Self::Equal
+        } else {
+            if let Some(properties) = base.properties() {
+                let target = if let Some(target) = target.properties() {
+                    target
+                } else {
+                    return Self::MoreProperties;
+                };
+                for (name, kind) in properties {
+                    if let Some(target) = target.get(name) {
+                        if kind != target {
+                            return if kind.is_enum() && target.is_enum() {
+                                Self::DifferentEnum
+                            } else if kind.is_range() && target.is_range() {
+                                Self::DifferentRange
+                            } else {
+                                Self::DifferentType
+                            }
+                        }
+                    }
+                }
+                if properties.len() < target.len() {
+                    Self::LessProperties
+                } else if properties.len() > target.len() {
+                    Self::MoreProperties
+                } else {
+                    Self::DifferentOrder
+                }
+            } else {
+                Self::LessProperties
+            }
         }
     }
 }
