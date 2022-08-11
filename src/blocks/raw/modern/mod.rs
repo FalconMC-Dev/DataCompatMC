@@ -1,4 +1,4 @@
-pub(crate) mod blocks;
+pub(crate) mod de;
 pub(crate) mod properties;
 
 pub use properties::{PropertyKind, EnumProperty};
@@ -20,14 +20,14 @@ pub struct RawBlockList<'raw> {
 impl<'raw> From<RawBlockList<'raw>> for ModernBlockList<'raw> {
     fn from(mut list: RawBlockList<'raw>) -> Self {
         ModernBlockList::new(
-            list.properties.drain(..).filter_map(|(name, kind)| {
+            list.properties.into_iter().filter_map(|(name, kind)| {
                 if let PropertyKind::Enum(kind) = kind {
                     Some((name, kind.fields_owned()))
                 } else {
                     None
                 }
             }).collect(),
-            list.blocks.drain().map(|(id, block)| (id, block.into())).collect()
+            list.blocks.into_iter().map(|(id, block)| (id, block.into())).collect()
         )
     }
 }

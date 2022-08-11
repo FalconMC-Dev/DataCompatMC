@@ -6,7 +6,6 @@ use nom::combinator::map;
 use nom::error::Error;
 use nom::sequence::separated_pair;
 use serde::{Deserialize, Serialize, Serializer};
-use serde::de::Visitor;
 
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
 pub struct Identifier<'a> {
@@ -67,31 +66,14 @@ impl<'a> TryFrom<&'a str> for Identifier<'a> {
     }
 }
 
-struct IdentifierVisitor;
-
-impl<'de> Visitor<'de> for IdentifierVisitor {
-    type Value = Identifier<'de>;
-
-    fn expecting(&self, formatter: &mut Formatter) -> std::fmt::Result {
-        formatter.write_str("a minecraft identifier (<namespace>:<location>)")
-    }
-
-    fn visit_borrowed_str<E>(self, v: &'de str) -> Result<Self::Value, E>
-    where
-            E: serde::de::Error, {
-        match Identifier::try_from(v) {
-            Ok(result) => Ok(result),
-            Err(error) => Err(E::custom(format!("invalid character at position {}", error)))
-        }
-    }
-}
-
 impl<'de: 'a, 'a> Deserialize<'de> for Identifier<'a> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
             D: serde::Deserializer<'de>
     {
-        deserializer.deserialize_str(IdentifierVisitor)
+        let ident = <&'a str as Deserialize>::deserialize(deserializer)?;
+        ident.try_into()
+            .map_err(|e| serde::de::Error::custom(format!("invalid character at position {}", e)))
     }
 }
 
@@ -102,5 +84,33 @@ impl<'a> Serialize for Identifier<'a> {
         result.push(':');
         result.push_str(self.location);
         serializer.serialize_str(&result)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use serde_test::{assert_de_tokens, Token, assert_de_tokens_error};
+
+    use super::*;
+
+    #[test]
+    fn test_identifier_de() {
+        let identifier = Identifier::from_location("test1");
+        assert_de_tokens(&identifier, &[
+            Token::Str("test1"),
+        ]);
+        
+        let identifier = Identifier::from_full("test_2", "other/value");
+        assert_de_tokens(&identifier, &[
+            Token::Str("test_2:other/value"),
+        ]);
+    }
+
+    #[test]
+    fn test_identifier_de_error() {
+        assert_de_tokens_error::<Identifier>(
+        &[
+            Token::Str("test/2:other"),
+        ], "invalid character at position 4")
     }
 }
