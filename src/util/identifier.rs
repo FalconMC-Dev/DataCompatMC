@@ -97,12 +97,12 @@ mod tests {
     fn test_identifier_de() {
         let identifier = Identifier::from_location("test1");
         assert_de_tokens(&identifier, &[
-            Token::Str("test1"),
+            Token::BorrowedStr("test1"),
         ]);
         
         let identifier = Identifier::from_full("test_2", "other/value");
         assert_de_tokens(&identifier, &[
-            Token::Str("test_2:other/value"),
+            Token::BorrowedStr("test_2:other/value"),
         ]);
     }
 
@@ -110,7 +110,7 @@ mod tests {
     fn test_identifier_de_error() {
         assert_de_tokens_error::<Identifier>(
         &[
-            Token::Str("test/2:other"),
-        ], "invalid character at position 4")
+            Token::BorrowedStr("test/2:other"),
+        ], "invalid character at position 6")
     }
 }
