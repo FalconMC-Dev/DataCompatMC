@@ -16,9 +16,13 @@ impl InputFile {
         &self.name
     }
 
-    pub fn data<'raw, T: Deserialize<'raw>>(&'raw self) -> anyhow::Result<T> {
+    pub fn deserialized<'raw, T: Deserialize<'raw>>(&'raw self) -> anyhow::Result<T> {
         let result = serde_json::from_str::<T>(&self.contents).with_context(|| "Could not deserialize to the requested format")?;
         Ok(result)
+    }
+
+    pub fn data(&self) -> &str {
+        &self.contents
     }
 }
 
