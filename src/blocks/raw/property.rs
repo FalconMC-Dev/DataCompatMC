@@ -67,6 +67,7 @@ impl<'raw> Display for PropertyKind<'raw> {
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(from = "Vec<&'raw str>")]
 pub struct EnumProperty<'raw> {
     #[serde(borrow)]
     values: Vec<&'raw str>,
@@ -82,8 +83,32 @@ impl<'raw> EnumProperty<'raw> {
     pub fn fields<'b>(&'b self) -> &'b [&'raw str] {
         &self.values
     }
+}
 
-    pub fn to_inner(self) -> Vec<&'raw str> {
-        self.values
+impl<'raw> From<Vec<&'raw str>> for EnumProperty<'raw> {
+    fn from(values: Vec<&'raw str>) -> Self {
+        Self {
+            values,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use serde_test::{assert_de_tokens, Token};
+
+    use super::EnumProperty;
+
+    #[test]
+    pub fn test_enum_property_de() {
+        let values = vec!["value1", "value2"];
+        let enum_property = EnumProperty::new(&values);
+
+        assert_de_tokens(&enum_property, &[
+            Token::Seq { len: Some(2) },
+            Token::BorrowedStr("value1"),
+            Token::BorrowedStr("value2"),
+            Token::SeqEnd,
+        ]);
     }
 }

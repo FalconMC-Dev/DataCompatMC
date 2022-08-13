@@ -1,0 +1,18 @@
+{
+	"portal_axis": ["x", "z"],
+	"redstone_kind": ["up", "side", "none"],
+	"hopper_facing": ["down", "north", "south", "west", "east"],
+	"all_facing": ["north", "east", "south", "west", "up", "down"],
+	"horizontal_facing": ["north", "south", "west", "east"],
+	"double_block_half": ["upper", "lower"],
+	"single_block_half": ["top", "bottom"],
+	"piston_kind": ["normal", "sticky"],
+	"slab_kind": ["top", "bottom", "double"],
+	"chest_kind": ["single", "left", "right"],
+	"wall_kind": ["none", "low", "tall"],
+	"structure_block_mode": ["save", "load", "corner", "data"],
+	"comparator_mode": ["compare", "subtract"],
+	"rail_shape": ["north_south", "east_west", "ascending_east", "ascending_west", "ascending_north", "ascending_south", "south_east", "south_west", "north_west", "north_east"],
+	"stair_shape": ["straight", "inner_left", "inner_right", "outer_left", "outer_right"],
+	"straight_rail_shape": ["north_south", "east_west", "ascending_east", "ascending_west", "ascending_north", "ascending_south"]
+}
