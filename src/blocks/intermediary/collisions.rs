@@ -14,7 +14,7 @@ pub struct CollisionList<'raw> {
 
 impl<'raw> CollisionList<'raw> {
     pub fn is_empty(&self) -> bool {
-        self.by_name.is_empty() || self.by_values.is_empty()
+        self.by_name.is_empty() && self.by_values.is_empty()
     }
 
     pub fn display(&self) {
@@ -49,6 +49,22 @@ impl<'a, 'raw> CollisionRuleProvider<'a, 'raw> {
     pub fn new(rules: Option<&'a ModernPropertyRules<'raw>>) -> Self {
         Self(rules)
     }
+
+    pub fn transform<'b, I>(&'b self, properties: I) -> impl Iterator<Item = (&'raw str, PropertyKind<'raw>)> + 'b
+    where
+        I: IntoIterator<Item = (&'raw str, PropertyKind<'raw>)> + 'b,
+    {
+        properties.into_iter()
+            .map(|(name, property)| {
+                if let PropertyKind::Enum(enum_property) = &property {
+                    (self.0.and_then(|rules| {
+                        rules.rule_data().get(&enum_property).cloned()
+                    }).unwrap_or(name), property)
+                } else {
+                    (name, property)
+                }
+            })
+    }
 }
 
 impl<'a, 'raw, 'de: 'raw> Visitor<'de> for CollisionRuleProvider<'a, 'raw> {
@@ -66,7 +82,7 @@ impl<'a, 'raw, 'de: 'raw> Visitor<'de> for CollisionRuleProvider<'a, 'raw> {
         let mut by_values = AHashMap::<EnumProperty<'raw>, AHashSet<&'raw str>>::new();
 
         while let Some((_, data)) = map.next_entry::<IgnoredAny, RawBlockData<'de>>()? {
-            for (name, property) in data.properties {
+            for (name, property) in self.transform(data.properties) {
                 match property {
                     PropertyKind::Enum(property) => {
                         if let Some(names) = by_values.get_mut(&property) {
@@ -110,6 +126,7 @@ impl<'a, 'raw, 'de: 'raw> DeserializeSeed<'de> for CollisionRuleProvider<'a, 'ra
 pub struct RawBlockData<'raw> {
     #[serde(borrow, default)]
     properties: AHashMap<&'raw str, PropertyKind<'raw>>,
-    states: IgnoredAny,
+    #[serde(rename = "states")]
+    _states: IgnoredAny,
 }
 
