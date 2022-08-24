@@ -6,6 +6,20 @@ use crate::blocks::raw::property::{EnumProperty, PropertyKind};
 
 use super::rules::ModernPropertyRules;
 
+/// A collection of possible property collisions in raw data.
+///
+/// There are two types of collisions:
+/// - name collisions
+/// - value collisions
+///
+/// Name collisions make it impossible to uniquely
+/// identify a property name with its values. This is a requirement
+/// for `DataCompatMC` and thus will abort the program.
+///
+/// Value collisions aren't critical for the compression
+/// of raw data but it can make the compressed data ever
+/// so slightly larger in size due to resulting duplicates
+/// in the property list. This will not abort the program.
 #[derive(Debug)]
 pub struct CollisionList<'raw> {
     by_name: AHashMap<&'raw str, AHashSet<EnumProperty<'raw>>>,
@@ -17,6 +31,7 @@ impl<'raw> CollisionList<'raw> {
         !self.by_name.is_empty()
     }
 
+    /// Displays a summary of the different collisions found in the raw data.
     pub fn display(&self) {
         if !self.by_name.is_empty() {
             eprintln!("Name collisions:");
@@ -46,10 +61,14 @@ impl<'raw> CollisionList<'raw> {
 pub struct CollisionRuleProvider<'a, 'raw>(Option<&'a ModernPropertyRules<'raw>>);
 
 impl<'a, 'raw> CollisionRuleProvider<'a, 'raw> {
+    /// Constructs a new `CollisionRuleProvider` given a set of rules
     pub fn new(rules: Option<&'a ModernPropertyRules<'raw>>) -> Self {
         Self(rules)
     }
 
+    /// This transformation does two checks:
+    /// - First it makes sure the property name is not `"type"`, this will get transformed into `"kind"`
+    /// - Secondly it uses the rules, if present, to replace the property name if there's a match based on the property values
     pub fn transform<'b, I>(&'b self, properties: I) -> impl Iterator<Item = (&'raw str, PropertyKind<'raw>)> + 'b
     where
         I: IntoIterator<Item = (&'raw str, PropertyKind<'raw>)> + 'b,
@@ -73,6 +92,8 @@ impl<'a, 'raw, 'de: 'raw> Visitor<'de> for CollisionRuleProvider<'a, 'raw> {
         formatter.write_str("a 1.13+ minecraft-generated block list")
     }
 
+    /// Simply collect all the properties and keep the ones
+    /// that share either name or values
     fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
         where
             A: serde::de::MapAccess<'de>,
@@ -122,7 +143,7 @@ impl<'a, 'raw, 'de: 'raw> DeserializeSeed<'de> for CollisionRuleProvider<'a, 'ra
 }
 
 #[derive(Debug, Deserialize)]
-pub struct RawBlockData<'raw> {
+struct RawBlockData<'raw> {
     #[serde(borrow, default)]
     properties: AHashMap<&'raw str, PropertyKind<'raw>>,
     #[serde(rename = "states")]

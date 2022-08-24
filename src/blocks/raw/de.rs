@@ -7,7 +7,7 @@ use crate::blocks::intermediary::rules::ModernPropertyRules;
 use crate::util::identifier::Identifier;
 
 use super::RawBlockData;
-use super::property::{PropertyKind, EnumProperty};
+use super::property::PropertyKind;
 
 pub struct CompactRuleProvider<'a, 'raw>(Option<&'a ModernPropertyRules<'raw>>);
 
@@ -16,6 +16,11 @@ impl<'a, 'raw> CompactRuleProvider<'a, 'raw> {
         Self(rules)
     }
 
+    /// This transformation does two checks:
+    /// - First it makes sure the property name is not `"type"`, this will get
+    ///     transformed into `"kind"`
+    /// - Secondly it uses the rules, if present, to replace the property name
+    ///     if there's a match based on the property values
     pub fn transform<'b, I>(&'b self, properties: I) -> impl Iterator<Item = (&'raw str, PropertyKind<'raw>)> + 'b
     where
         I: IntoIterator<Item = (&'raw str, PropertyKind<'raw>)> + 'b,
@@ -39,10 +44,13 @@ impl<'a, 'raw, 'de: 'raw> Visitor<'de> for CompactRuleProvider<'a, 'raw> {
         formatter.write_str("a 1.13+ minecraft-generated block list")
     }
 
+    /// This implementation verifies the data
+    /// and makes sure it follows the expected pattern.
     fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
         where
             A: serde::de::MapAccess<'de>,
     {
+        // Overall lists that will be passed to ModernBlockList
         let mut properties = LinkedHashMap::with_hasher(RandomState::default());
         let mut blocks = LinkedHashMap::with_capacity_and_hasher(map.size_hint().unwrap_or(0), RandomState::default());
 
@@ -50,6 +58,7 @@ impl<'a, 'raw, 'de: 'raw> Visitor<'de> for CompactRuleProvider<'a, 'raw> {
             let property_count = block.property_count();
             let state_count = block.state_count();
             
+            // make sure there is the correct amound of blockstates
             if block.states.len() != state_count {
                 return Err(serde::de::Error::invalid_length(block.states.len(), &format!("{} entries", state_count).as_str()))
             }
@@ -57,12 +66,17 @@ impl<'a, 'raw, 'de: 'raw> Visitor<'de> for CompactRuleProvider<'a, 'raw> {
 
             let mut default_id = None;
             for state in &block.states {
+                // Make sure the blockstate has the correct amount of property values
                 if state.properties.len() != property_count {
                     return Err(serde::de::Error::invalid_length(
                         state.properties.len(), &format!("{} entries", property_count).as_str(),
                     ));
                 }
 
+                // Check the network values for consistency,
+                // this is the most important trick for compacting.
+                //
+                // Step 1: calculate the offset from the base id based on property values
                 let mut factor = 1;
                 let mut prev_factor = 1;
                 let mut offset = 0;
@@ -88,6 +102,8 @@ impl<'a, 'raw, 'de: 'raw> Visitor<'de> for CompactRuleProvider<'a, 'raw> {
                         }
                     }
                 }
+
+                // Step 2: make sure that the base id plus offset equals the given blockstate id
                 let id = base_id + offset as i32;
                 if id != state.id {
                     return Err(serde::de::Error::custom(
@@ -98,16 +114,20 @@ impl<'a, 'raw, 'de: 'raw> Visitor<'de> for CompactRuleProvider<'a, 'raw> {
                         ),
                     ));
                 }
+                // try to find a default blockstate other than base id
                 if state.default {
                     default_id = Some(id);
                 }
             }
+            // only if base id is different from default_id should default_id be remembered
+            // (see below when adding new block)
             let default_id = default_id.and_then(|id| if id == base_id {
                 None
             } else {
                 Some(id)
             });
 
+            // Extend the list of properties with the properties of this block
             properties.extend(
                 self.transform(block.properties())
                 .filter_map(|(name, property)| {
@@ -118,6 +138,7 @@ impl<'a, 'raw, 'de: 'raw> Visitor<'de> for CompactRuleProvider<'a, 'raw> {
                 })
             );
 
+            // Collect the property types to add to the compacted form of this block (see below)
             let properties = block.properties()
                 .map(|(name, kind)| if name == "type" {
                     ("kind", kind)
@@ -142,6 +163,7 @@ impl<'a, 'raw, 'de: 'raw> Visitor<'de> for CompactRuleProvider<'a, 'raw> {
                 })
                 .collect();
 
+            // Add a new block using the properties, base id and default id calculated above
             blocks.insert(identifier, ModernBlockData::new(properties, base_id, default_id));
         }
 
@@ -159,31 +181,4 @@ impl<'a, 'raw, 'de: 'raw> DeserializeSeed<'de> for CompactRuleProvider<'a, 'raw>
         deserializer.deserialize_map(self)
     }
 }
-// pub struct RuleProvider<'a, 'raw>(&'a ModernPropertyRules<'raw>);
-//
-// impl<'a, 'raw, 'de: 'raw> Visitor<'de> for RuleProvider<'a, 'raw> {
-//     type Value = RawBlockList<'raw>;
-//
-//     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-//         formatter.write_str("a 1.13+ minecraft-generated block list")
-//     }
-//
-//     fn visit_map<A>(self, map: A) -> Result<Self::Value, A::Error>
-//         where
-//             A: serde::de::MapAccess<'de>,
-//     {
-//         let properties = AHashMap::new();
-//         let blocks = LinkedHashMap::with_capacity(map.size_hint().unwrap_or(0));
-//     }
-// }
-//
-// impl<'a, 'raw, 'de: 'raw> DeserializeSeed<'de> for RuleProvider<'a, 'raw> {
-//     type Value = RawBlockList<'raw>;
-//
-//     fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
-//     where
-//         D: serde::Deserializer<'de>,
-//     {
-//     }
-// }
-//
+

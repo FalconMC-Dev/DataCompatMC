@@ -2,8 +2,8 @@ use anyhow::Context;
 use clap::{Parser, Subcommand};
 use blocks::intermediary::IntermediaryCommand;
 
-mod blocks;
-mod util;
+pub mod blocks;
+pub mod util;
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]

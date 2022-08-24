@@ -36,12 +36,15 @@ pub struct IntermediaryCommand {
 
 impl IntermediaryCommand {
     pub fn generate_intermediate(&self) -> Result<()> {
+        // Load data
         let data = self.input.data();
 
+        // Load rules
         let rules: Option<ModernPropertyRules> = self.rules
             .as_ref()
             .map(|rules| rules.deserialized()).transpose()?;
 
+        // Property collisions
         eprintln!("Checking for property collisions...");
         let collisions = CollisionRuleProvider::new(rules.as_ref());
         let collisions: CollisionList = collisions.deserialize(&mut Deserializer::from_str(data))?; 
@@ -53,6 +56,7 @@ impl IntermediaryCommand {
         }
         eprintln!("No serious collisions found, slight inefficiencies will have been signaled by now. \u{2705}");
 
+        // Compact data and print to output
         let compacter = CompactRuleProvider::new(rules.as_ref());
         let modern_data: ModernBlockList = compacter.deserialize(&mut Deserializer::from_str(data))?;
 
@@ -81,42 +85,5 @@ impl IntermediaryCommand {
         }
 
         Ok(())
-        // let mut data: RawBlockList = self.input.data()?;
-        // eprintln!("Loaded {} blocks \u{2705}\nLoaded {} properties \u{2705}", data.blocks().len(), data.properties().len());
-        // if let Some(rules) = &self.rules {
-        //     eprintln!("Applying property rules...");
-        //     let rules: ModernPropertyRules = rules.data()?;
-        //     rules.apply_enum_rules(&mut data);
-        // }
-        // if !self.check_collisions(data.properties_mut()) {
-        //     eprintln!("\nCould not continue due to one or more collisions in block properties.\nPlease specify a rules file to resolve the collision(s).");
-        //     return Ok(());
-        // }
-        //
-        // let modern_data = ModernBlockList::from(data);
-        // match &self.output {
-        //     Some(output) => {
-        //         if let Some(writer) = output.writer()? {
-        //             if self.no_pretty {
-        //                 serde_json::to_writer(writer, &modern_data)?;
-        //             } else {
-        //                 serde_json::to_writer_pretty(writer, &modern_data)?;
-        //             }
-        //             eprintln!("Successfully compacted data \u{2705}");
-        //         } else {
-        //             eprintln!("Aborted");
-        //         }
-        //     }
-        //     None => {
-        //         let result = if self.no_pretty {
-        //             serde_json::to_string(&modern_data)?
-        //         } else {
-        //             serde_json::to_string_pretty(&modern_data)?
-        //         };
-        //         println!("{}", result);
-        //         eprintln!("========\nSuccessfully compacted data \u{2705}");
-        //     }
-        // }
-        // Ok(())
     }
 }

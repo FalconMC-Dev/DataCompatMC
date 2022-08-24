@@ -1,14 +1,8 @@
-use ahash::{AHashMap, RandomState};
+use ahash::RandomState;
 use hashlink::LinkedHashMap;
 use serde::Deserialize;
 
-use crate::util::identifier::Identifier;
-
-use property::EnumProperty;
-
 use self::property::PropertyKind;
-
-use super::intermediary::data::PropertyValue;
 
 pub mod de;
 // pub mod modern;
