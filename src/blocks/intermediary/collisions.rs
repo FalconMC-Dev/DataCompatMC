@@ -13,8 +13,8 @@ pub struct CollisionList<'raw> {
 }
 
 impl<'raw> CollisionList<'raw> {
-    pub fn is_empty(&self) -> bool {
-        self.by_name.is_empty() && self.by_values.is_empty()
+    pub fn should_exit(&self) -> bool {
+        !self.by_name.is_empty()
     }
 
     pub fn display(&self) {
@@ -38,7 +38,7 @@ impl<'raw> CollisionList<'raw> {
                 }
             }
             eprintln!("========");
-            eprintln!("Found {} value collisions! \u{274C}\n", self.by_values.len());
+            eprintln!("Found {} value collisions! \u{26A0}\u{FE0F}\n", self.by_values.len());
         }
     }
 }
@@ -56,10 +56,9 @@ impl<'a, 'raw> CollisionRuleProvider<'a, 'raw> {
     {
         properties.into_iter()
             .map(|(name, property)| {
-                if let PropertyKind::Enum(enum_property) = &property {
-                    (self.0.and_then(|rules| {
-                        rules.rule_data().get(&enum_property).cloned()
-                    }).unwrap_or(name), property)
+                let name = if name == "type" { "kind" } else { name };
+                if let Some(rules) = self.0 {
+                    rules.transform(name, property)
                 } else {
                     (name, property)
                 }

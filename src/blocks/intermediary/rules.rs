@@ -2,7 +2,7 @@ use ahash::RandomState;
 use hashlink::LinkedHashMap;
 use serde::Deserialize;
 
-use crate::blocks::raw::property::EnumProperty;
+use crate::blocks::raw::property::{EnumProperty, PropertyKind};
 
 #[derive(Debug, Deserialize)]
 #[serde(from = "LinkedHashMap<&'raw str, EnumProperty<'raw>, RandomState>")]
@@ -12,8 +12,11 @@ pub struct ModernPropertyRules<'raw> {
 }
 
 impl<'raw> ModernPropertyRules<'raw> {
-    pub fn rule_data(&self) -> &LinkedHashMap<EnumProperty<'raw>, &'raw str, RandomState> {
-        &self.rule_data
+    pub fn transform(&self, name: &'raw str, property: PropertyKind<'raw>) -> (&'raw str, PropertyKind<'raw>) {
+        match &property {
+            PropertyKind::Enum(enum_property) => (self.rule_data.get(&enum_property).cloned().unwrap_or(name), property),
+            _ => (name, property)
+        }
     }
 }
 
@@ -26,45 +29,4 @@ impl<'raw> From<LinkedHashMap<&'raw str, EnumProperty<'raw>, RandomState>> for M
         }
     }
 }
-
-// #[allow(unused_must_use)]
-// impl<'raw> ModernPropertyRules<'raw> {
-//     pub fn apply_enum_rules<'b>(&'b self, data: &mut RawBlockList<'raw>) {
-//         let cache: LinkedHashMap<EnumProperty<'raw>, &'raw str, RandomState> = self.rule_data
-//             .iter()
-//             .map(|(n, values)| (EnumProperty::new(values), *n))
-//             .collect();
-//
-//         let properties = data.properties_mut();
-//         for (name, kind) in properties.iter_mut() {
-//             if let PropertyKind::Enum(property) = kind {
-//                 if let Some(key) = self.rule_data
-//                     .iter()
-//                     .find_map(|(n,v)| {
-//                         if v == property.fields() {
-//                             Some(n)
-//                         } else {
-//                             None
-//                         }
-//                     }) {
-//                     std::mem::replace(name, key);
-//                 }
-//             }
-//         }
-//         properties.sort_by(|(n1, _), (n2, _)| n1.cmp(n2));
-//         properties.dedup_by(|(n1, _), (n2, _)| n1.eq(&n2));
-//
-//         for (_, block) in data.blocks_mut() {
-//             if let Some(properties) = block.kinds_mut() {
-//                 for ((_, name), kind) in properties.iter_mut() {
-//                     if let PropertyKind::Enum(kind) = kind {
-//                         if let Some(key) = cache.get(kind) {
-//                             std::mem::replace(name, Some(key));
-//                         }
-//                     }
-//                 }
-//             }
-//         }
-//     }
-// }
 
