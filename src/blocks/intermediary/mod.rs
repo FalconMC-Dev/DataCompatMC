@@ -5,6 +5,7 @@ use serde_json::Deserializer;
 use crate::blocks::intermediary::data::ModernBlockList;
 use crate::blocks::intermediary::rules::ModernPropertyRules;
 
+use crate::blocks::raw::de::CompactRuleProvider;
 use crate::util::file::{InputFile, OutputFile};
 
 use self::collisions::{CollisionRuleProvider, CollisionList};
@@ -45,10 +46,38 @@ impl IntermediaryCommand {
         let collisions = CollisionRuleProvider::new(rules.as_ref());
         let collisions: CollisionList = collisions.deserialize(&mut Deserializer::from_str(data))?; 
 
-        if !collisions.is_empty() {
-            collisions.display();
-            eprintln!("\nCould not continue due to one or more collisions in block properties.\nPlease specify a rules file to resolve these");
+        collisions.display();
+        if collisions.should_exit() {
+            eprintln!("Could not continue due to one or more collisions in block properties.\nPlease specify a rules file to resolve these");
             return Ok(())
+        }
+        eprintln!("No serious collisions found, slight inefficiencies will have been signaled by now. \u{2705}");
+
+        let compacter = CompactRuleProvider::new(rules.as_ref());
+        let modern_data: ModernBlockList = compacter.deserialize(&mut Deserializer::from_str(data))?;
+
+        match &self.output {
+            Some(output) => {
+                if let Some(writer) = output.writer()? {
+                    if self.no_pretty {
+                        serde_json::to_writer(writer, &modern_data)?;
+                    } else {
+                        serde_json::to_writer_pretty(writer, &modern_data)?;
+                    }
+                    eprintln!("Successfully compacted data \u{2705}");
+                } else {
+                    eprintln!("Aborted");
+                }
+            }
+            None => {
+                let result = if self.no_pretty {
+                    serde_json::to_string(&modern_data)?
+                } else {
+                    serde_json::to_string_pretty(&modern_data)?
+                };
+                println!("{}", result);
+                eprintln!("========\nSuccessfully compacted data \u{2705}");
+            }
         }
 
         Ok(())
@@ -90,40 +119,4 @@ impl IntermediaryCommand {
         // }
         // Ok(())
     }
-    
-    // fn check_collisions<'raw>(&self, properties: &mut Vec<(&'raw str, PropertyKind<'raw>)>) -> bool {
-    //     eprintln!("Checking for property collisions...\n========");
-    //     properties.sort_by(|(n1, _), (n2, _)| n1.cmp(n2));
-    //     let mut iterator = properties.iter()
-    //         .filter_map(|(n, k)| match k {
-    //             PropertyKind::Enum(values) => Some((n, values)),
-    //             _ => None
-    //         }).peekable();
-    //     let mut count = 0;
-    //     let mut streak = false;
-    //     while let Some((&name, property)) = iterator.next() {
-    //         if let Some((&next_name, _)) = iterator.peek() {
-    //             if name == next_name {
-    //                 streak = true;
-    //                 eprintln!("{} -> {:?}", name, property.fields());
-    //             } else if streak {
-    //                 streak = false;
-    //                 count += 1;
-    //                 eprintln!("{} -> {:?}\n========", name, property.fields());
-    //             }
-    //         } else {
-    //             if streak {
-    //                 count += 1;
-    //                 eprintln!("{} -> {:?}\n========", name, property.fields());
-    //             }
-    //         }
-    //     }
-    //     if count > 0 {
-    //         eprintln!("Found {} property collisions! \u{274C}", count);
-    //         false
-    //     } else {
-    //         eprintln!("No property collisions found! \u{2705}\n========");
-    //         true
-    //     }
-    // }
 }

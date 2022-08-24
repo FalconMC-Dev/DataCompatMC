@@ -66,8 +66,19 @@ impl<'raw> Display for PropertyKind<'raw> {
     }
 }
 
+impl<'raw> PropertyKind<'raw> {
+    pub fn len(&self) -> usize {
+        match self {
+            PropertyKind::Bool => 2,
+            PropertyKind::Int(range) => (range[1] - range[0] + 1) as usize,
+            PropertyKind::Enum(values) => values.fields().len()
+        }
+    }
+}
+
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(from = "Vec<&'raw str>")]
+#[serde(into = "Vec<&'raw str>")]
 pub struct EnumProperty<'raw> {
     #[serde(borrow)]
     values: Vec<&'raw str>,
@@ -90,6 +101,12 @@ impl<'raw> From<Vec<&'raw str>> for EnumProperty<'raw> {
         Self {
             values,
         }
+    }
+}
+
+impl<'raw> Into<Vec<&'raw str>> for EnumProperty<'raw> {
+    fn into(self) -> Vec<&'raw str> {
+        self.values
     }
 }
 

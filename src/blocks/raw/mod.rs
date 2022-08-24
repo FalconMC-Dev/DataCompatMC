@@ -8,7 +8,7 @@ use property::EnumProperty;
 
 use self::property::PropertyKind;
 
-use super::intermediary::data::TextOrRange;
+use super::intermediary::data::PropertyValue;
 
 pub mod de;
 // pub mod modern;
@@ -17,9 +17,31 @@ pub mod property;
 #[derive(Debug, Deserialize)]
 pub struct RawBlockData<'raw> {
     #[serde(borrow, default)]
-    properties: LinkedHashMap<&'raw str, PropertyKind<'raw>, RandomState>,
+    properties: LinkedHashMap<&'raw str, Vec<&'raw str>, RandomState>,
     #[serde(borrow)]
     states: Vec<RawBlockState<'raw>>,
+}
+
+impl<'raw> RawBlockData<'raw> {
+    pub fn property_count(&self) -> usize {
+        self.properties.len()
+    }
+
+    pub fn state_count(&self) -> usize {
+        let mut number = 1;
+        for (_, property) in &self.properties {
+            number *= property.len()
+        }
+        number
+    }
+
+    pub fn properties<'b>(&'b self) -> impl Iterator<Item=(&'raw str, PropertyKind<'raw>)> + 'b {
+        self.properties
+            .iter()
+            .filter_map(|(name, values)| {
+                PropertyKind::try_from(values.as_slice()).ok().map(|property| (*name, property))
+            })
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -31,15 +53,3 @@ pub struct RawBlockState<'raw> {
     default: bool,
 }
 
-#[derive(Debug)]
-pub struct RawBlockList<'raw> {
-    properties: AHashMap<&'raw str, EnumProperty<'raw>>,
-    blocks: LinkedHashMap<Identifier<'raw>, RawBlock<'raw>, RandomState>,
-}
-
-#[derive(Debug)]
-pub struct RawBlock<'raw> {
-    properties: LinkedHashMap<&'raw str, TextOrRange<'raw>, RandomState>,
-    base_id: i32,
-    default_id: Option<i32>,
-}
