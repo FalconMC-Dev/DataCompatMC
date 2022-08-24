@@ -4,9 +4,22 @@ use serde::{Deserialize, Serialize};
 use crate::blocks::raw::property::EnumProperty;
 use crate::util::identifier::Identifier;
 
-type PropertyList<'raw> = LinkedHashMap<&'raw str, EnumProperty<'raw>, RandomState>;
-type BlockList<'raw> = LinkedHashMap<Identifier<'raw>, ModernBlockData<'raw>, RandomState>;
+/// A shorter form of the property list of the compact format.
+///
+/// This is a mapping of a property name with corresponding property values.
+pub type PropertyList<'raw> = LinkedHashMap<&'raw str, EnumProperty<'raw>, RandomState>;
+/// A shorter form of the block list of the compact format.
+pub type BlockList<'raw> = LinkedHashMap<Identifier<'raw>, ModernBlockData<'raw>, RandomState>;
 
+/// The compact blockstates format.
+///
+/// In this format there are two lists:
+/// - The first list is a list of all possible properties.
+///     i.e. a property name mapped to more than one property value.
+/// - The second list is a list of all the blocks.
+///     i.e. a collection of blockstates, if the block has one or more properties
+///     it will have these listed referring to the first list when it's an enum property.
+///     If the block has more than one blockstate, there will also be a `default_id` field.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ModernBlockList<'raw> {
     #[serde(borrow)]
@@ -16,7 +29,7 @@ pub struct ModernBlockList<'raw> {
 }
 
 impl<'raw> ModernBlockList<'raw> {
-    pub fn new(properties: PropertyList<'raw>, blocks: BlockList<'raw>) -> Self {
+    pub(crate) fn new(properties: PropertyList<'raw>, blocks: BlockList<'raw>) -> Self {
         ModernBlockList {
             properties,
             blocks,
@@ -24,6 +37,11 @@ impl<'raw> ModernBlockList<'raw> {
     }
 }
 
+/// Compact way of identifying block data.
+///
+/// Only if the block has one ore more properties, the [`ModernBlockData::kinds`]
+/// will be serialized. If the block has more than one blockstate,
+/// a default_id field will be serialized as well.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ModernBlockData<'raw> {
     #[serde(borrow, skip_serializing_if = "LinkedHashMap::is_empty", rename = "properties")]
