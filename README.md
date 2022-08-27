@@ -18,9 +18,12 @@ Currently this tool only parses generated block data by the [Minecraft data gene
 Clone the project and build it using `cargo build --release`.
 Use `data-compat-mc --help` for further information.
 
+Visit our [wiki](https://wiki.falconmc.org/) for more information!
+
 ##  Contributing
 
-Please feel free to help out in any way possible.
+Please feel free to help out in any way possible. Information about the
+architecture and design can be found on our [wiki](https://wiki.falconmc.org/).
 
 - [Issues](https://github.com/GrizzlT/DataCompatMC/issues)
 
