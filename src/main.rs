@@ -1,8 +1,9 @@
 use anyhow::Context;
 use clap::{Parser, Subcommand};
-use blocks::intermediary::IntermediaryCommand;
+use cmd::IntermediaryCommand;
 
 pub mod blocks;
+pub mod cmd;
 pub mod util;
 
 #[derive(Parser, Debug)]
