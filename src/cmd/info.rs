@@ -34,13 +34,13 @@ impl InfoCommand {
             note = String::from("");
         };
 
-        let num_of_blocks = data.blocks.len();
-        let num_of_enum_props = data.properties.len();
+        let blocks_len = data.blocks.len();
+        let properties_len = data.properties.len();
 
         println!(
             "{version}{note}
-Loaded {num_of_blocks} blocks successfully
-There are {num_of_enum_props} enum properties present"
+Loaded {blocks_len} blocks successfully
+There are {properties_len} enum properties present"
         );
 
         Ok(())

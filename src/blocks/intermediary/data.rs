@@ -50,8 +50,9 @@ impl<'raw> ModernBlockList<'raw> {
 /// one blockstate, a default_id field will be serialized as well.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ModernBlockData<'raw> {
-    #[serde(borrow, skip_serializing_if = "Option::is_none", rename = "properties")]
-    kinds: Option<LinkedHashMap<&'raw str, PropertyValue<'raw>, RandomState>>,
+    #[serde(borrow, skip_serializing_if = "LinkedHashMap::is_empty", rename = "properties")]
+    #[serde(default)]
+    kinds: LinkedHashMap<&'raw str, PropertyValue<'raw>, RandomState>,
     #[serde(rename = "base")]
     pub base_id: i32,
     #[serde(skip_serializing_if = "Option::is_none", rename = "default")]
@@ -61,11 +62,7 @@ pub struct ModernBlockData<'raw> {
 impl<'raw> ModernBlockData<'raw> {
     pub fn new(kinds: LinkedHashMap<&'raw str, PropertyValue<'raw>, RandomState>, base_id: i32, default_id: Option<i32>) -> Self {
         ModernBlockData {
-            kinds: if kinds.is_empty() {
-                None
-            } else {
-                Some(kinds)
-            },
+            kinds,
             base_id,
             default_id,
         }

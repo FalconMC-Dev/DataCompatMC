@@ -1,10 +1,10 @@
 use ahash::RandomState;
 use hashlink::LinkedHashMap;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 use crate::blocks::raw::property::{EnumProperty, PropertyKind};
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize)]
 #[serde(from = "LinkedHashMap<&'raw str, EnumProperty<'raw>, RandomState>")]
 pub struct ModernPropertyRules<'raw> {
     #[serde(borrow, flatten)]
