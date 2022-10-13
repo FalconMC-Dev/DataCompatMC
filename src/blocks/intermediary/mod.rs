@@ -4,4 +4,3 @@ mod metadata;
 pub mod rules;
 
 pub use metadata::MetaData;
-

@@ -1,6 +1,6 @@
 use anyhow::Context;
 use clap::{Parser, Subcommand};
-use cmd::IntermediaryCommand;
+use cmd::{InfoCommand, IntermediaryCommand};
 
 pub mod blocks;
 pub mod cmd;
@@ -16,14 +16,14 @@ pub struct Cli {
 #[derive(Subcommand, Debug)]
 pub enum SubCommands {
     Intermediary(IntermediaryCommand),
+    Info(InfoCommand),
 }
 
 fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
-        SubCommands::Intermediary(cmd) => {
-            cmd.generate_intermediate().with_context(|| "Error while generating data")
-        }
+        SubCommands::Intermediary(cmd) => cmd.generate_intermediate().context("Error while generating data"),
+        SubCommands::Info(cmd) => cmd.display_info().context("Error while displaying info"),
     }
 }

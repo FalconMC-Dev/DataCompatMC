@@ -1,9 +1,9 @@
-use clap::Args;
 use anyhow::Result;
+use clap::Args;
 use serde::de::DeserializeSeed;
 use serde_json::Deserializer;
 
-use crate::blocks::intermediary::collisions::{CollisionRuleProvider, CollisionList};
+use crate::blocks::intermediary::collisions::{CollisionList, CollisionRuleProvider};
 use crate::blocks::intermediary::data::ModernBlockList;
 use crate::blocks::intermediary::rules::ModernPropertyRules;
 use crate::blocks::raw::de::CompactRuleProvider;
@@ -24,7 +24,11 @@ pub struct IntermediaryCommand {
     rules: Option<InputFile>,
     #[clap(short, long)]
     output: Option<OutputFile>,
-    #[clap(long = "no-pretty")]
+    #[clap(long)]
+    version_id: Option<i32>,
+    #[clap(long)]
+    version_name: Option<String>,
+    #[clap(long)]
     /// Does not pretty-print the resulting json data
     no_pretty: bool,
 }
@@ -35,19 +39,17 @@ impl IntermediaryCommand {
         let data = self.input.data();
 
         // Load rules
-        let rules: Option<ModernPropertyRules> = self.rules
-            .as_ref()
-            .map(|rules| rules.deserialized()).transpose()?;
+        let rules: Option<ModernPropertyRules> = self.rules.as_ref().map(|rules| rules.deserialized()).transpose()?;
 
         // Property collisions
         eprintln!("Checking for property collisions...");
         let collisions = CollisionRuleProvider::new(rules.as_ref());
-        let collisions: CollisionList = collisions.deserialize(&mut Deserializer::from_str(data))?; 
+        let collisions: CollisionList = collisions.deserialize(&mut Deserializer::from_str(data))?;
 
         collisions.display();
         if collisions.should_exit() {
             eprintln!("Could not continue due to one or more collisions in block properties.\nPlease specify a rules file to resolve these");
-            return Ok(())
+            return Ok(());
         }
         eprintln!("No serious collisions found, slight inefficiencies will have been signaled by now. \u{2705}");
 
@@ -67,7 +69,7 @@ impl IntermediaryCommand {
                 } else {
                     eprintln!("Aborted");
                 }
-            }
+            },
             None => {
                 let result = if self.no_pretty {
                     serde_json::to_string(&modern_data)?
@@ -76,10 +78,9 @@ impl IntermediaryCommand {
                 };
                 println!("{}", result);
                 eprintln!("========\nSuccessfully compacted data \u{2705}");
-            }
+            },
         }
 
         Ok(())
     }
 }
-

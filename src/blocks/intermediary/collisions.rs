@@ -1,10 +1,9 @@
 use ahash::{AHashMap, AHashSet};
+use serde::de::{DeserializeSeed, IgnoredAny, Visitor};
 use serde::Deserialize;
-use serde::de::{Visitor, IgnoredAny, DeserializeSeed};
-
-use crate::blocks::raw::property::{EnumProperty, PropertyKind};
 
 use super::rules::ModernPropertyRules;
+use crate::blocks::raw::property::{EnumProperty, PropertyKind};
 
 /// A collection of possible property collisions in raw data.
 ///
@@ -27,9 +26,7 @@ pub struct CollisionList<'raw> {
 }
 
 impl<'raw> CollisionList<'raw> {
-    pub fn should_exit(&self) -> bool {
-        !self.by_name.is_empty()
-    }
+    pub fn should_exit(&self) -> bool { !self.by_name.is_empty() }
 
     /// Displays a summary of the different collisions found in the raw data.
     pub fn display(&self) {
@@ -62,41 +59,42 @@ pub struct CollisionRuleProvider<'a, 'raw>(Option<&'a ModernPropertyRules<'raw>>
 
 impl<'a, 'raw> CollisionRuleProvider<'a, 'raw> {
     /// Constructs a new `CollisionRuleProvider` given a set of rules
-    pub fn new(rules: Option<&'a ModernPropertyRules<'raw>>) -> Self {
-        Self(rules)
-    }
+    pub fn new(rules: Option<&'a ModernPropertyRules<'raw>>) -> Self { Self(rules) }
 
     /// This transformation does two checks:
-    /// - First it makes sure the property name is not `"type"`, this will get transformed into `"kind"`
-    /// - Secondly it uses the rules, if present, to replace the property name if there's a match based on the property values
+    /// - First it makes sure the property name is not `"type"`, this will get
+    ///   transformed into `"kind"`
+    /// - Secondly it uses the rules, if present, to replace the property name
+    ///   if there's a match based on the property values
     pub fn transform<'b, I>(&'b self, properties: I) -> impl Iterator<Item = (&'raw str, PropertyKind<'raw>)> + 'b
     where
         I: IntoIterator<Item = (&'raw str, PropertyKind<'raw>)> + 'b,
     {
-        properties.into_iter()
-            .map(|(name, property)| {
-                let name = if name == "type" { "kind" } else { name };
-                if let Some(rules) = self.0 {
-                    rules.transform(name, property)
-                } else {
-                    (name, property)
-                }
-            })
+        properties.into_iter().map(|(name, property)| {
+            let name = if name == "type" {
+                "kind"
+            } else {
+                name
+            };
+            if let Some(rules) = self.0 {
+                rules.transform(name, property)
+            } else {
+                (name, property)
+            }
+        })
     }
 }
 
 impl<'a, 'raw, 'de: 'raw> Visitor<'de> for CollisionRuleProvider<'a, 'raw> {
     type Value = CollisionList<'raw>;
 
-    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-        formatter.write_str("a 1.13+ minecraft-generated block list")
-    }
+    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result { formatter.write_str("a 1.13+ minecraft-generated block list") }
 
     /// Simply collect all the properties and keep the ones
     /// that share either name or values
     fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
-        where
-            A: serde::de::MapAccess<'de>,
+    where
+        A: serde::de::MapAccess<'de>,
     {
         let mut by_name = AHashMap::<&'raw str, AHashSet<EnumProperty>>::new();
         let mut by_values = AHashMap::<EnumProperty<'raw>, AHashSet<&'raw str>>::new();
@@ -115,8 +113,8 @@ impl<'a, 'raw, 'de: 'raw> Visitor<'de> for CollisionRuleProvider<'a, 'raw> {
                         } else {
                             by_name.insert(name, AHashSet::from([property]));
                         }
-                    }
-                    _ => {}
+                    },
+                    _ => {},
                 }
             }
         }
@@ -124,10 +122,7 @@ impl<'a, 'raw, 'de: 'raw> Visitor<'de> for CollisionRuleProvider<'a, 'raw> {
         by_name.retain(|_, set| set.len() > 1);
         by_values.retain(|_, set| set.len() > 1);
 
-        Ok(CollisionList {
-            by_name,
-            by_values,
-        })
+        Ok(CollisionList { by_name, by_values })
     }
 }
 
@@ -136,7 +131,7 @@ impl<'a, 'raw, 'de: 'raw> DeserializeSeed<'de> for CollisionRuleProvider<'a, 'ra
 
     fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
     where
-        D: serde::Deserializer<'de>
+        D: serde::Deserializer<'de>,
     {
         deserializer.deserialize_map(self)
     }
@@ -149,4 +144,3 @@ struct RawBlockData<'raw> {
     #[serde(rename = "states")]
     _states: IgnoredAny,
 }
-

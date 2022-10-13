@@ -1,6 +1,8 @@
 use ahash::RandomState;
 use hashlink::LinkedHashMap;
 use serde::{Deserialize, Serialize};
+
+use super::MetaData;
 use crate::blocks::raw::property::EnumProperty;
 use crate::util::identifier::Identifier;
 
@@ -14,23 +16,27 @@ pub type BlockList<'raw> = LinkedHashMap<Identifier<'raw>, ModernBlockData<'raw>
 /// The compact blockstates format.
 ///
 /// In this format there are two lists:
-/// - The first list is a list of all possible properties.
-///     i.e. a property name mapped to more than one property value.
-/// - The second list is a list of all the blocks.
-///     i.e. a collection of blockstates, if the block has one or more properties
-///     it will have these listed referring to the first list when it's an enum property.
-///     If the block has more than one blockstate, there will also be a `default_id` field.
+/// - The first list is a list of all possible properties. i.e. a property name
+///   mapped to more than one property value.
+/// - The second list is a list of all the blocks. i.e. a collection of
+///   blockstates, if the block has one or more properties it will have these
+///   listed referring to the first list when it's an enum property. If the
+///   block has more than one blockstate, there will also be a `default_id`
+///   field.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ModernBlockList<'raw> {
     #[serde(borrow)]
-    properties: PropertyList<'raw>,
+    pub metadata: Option<MetaData<'raw>>,
     #[serde(borrow)]
-    blocks: BlockList<'raw>,
+    pub properties: PropertyList<'raw>,
+    #[serde(borrow)]
+    pub blocks: BlockList<'raw>,
 }
 
 impl<'raw> ModernBlockList<'raw> {
-    pub(crate) fn new(properties: PropertyList<'raw>, blocks: BlockList<'raw>) -> Self {
+    pub(crate) fn new(metadata: Option<MetaData<'raw>>, properties: PropertyList<'raw>, blocks: BlockList<'raw>) -> Self {
         ModernBlockList {
+            metadata,
             properties,
             blocks,
         }
@@ -39,25 +45,29 @@ impl<'raw> ModernBlockList<'raw> {
 
 /// Compact way of identifying block data.
 ///
-/// Only if the block has one ore more properties, the [`ModernBlockData::kinds`]
-/// will be serialized. If the block has more than one blockstate,
-/// a default_id field will be serialized as well.
+/// Only if the block has one ore more properties, the
+/// [`ModernBlockData::kinds`] will be serialized. If the block has more than
+/// one blockstate, a default_id field will be serialized as well.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ModernBlockData<'raw> {
-    #[serde(borrow, skip_serializing_if = "LinkedHashMap::is_empty", rename = "properties")]
-    kinds: LinkedHashMap<&'raw str, PropertyValue<'raw>, RandomState>,
+    #[serde(borrow, skip_serializing_if = "Option::is_none", rename = "properties")]
+    kinds: Option<LinkedHashMap<&'raw str, PropertyValue<'raw>, RandomState>>,
     #[serde(rename = "base")]
-    base_id: i32,
+    pub base_id: i32,
     #[serde(skip_serializing_if = "Option::is_none", rename = "default")]
-    default_id: Option<i32>,
+    pub default_id: Option<i32>,
 }
 
 impl<'raw> ModernBlockData<'raw> {
     pub fn new(kinds: LinkedHashMap<&'raw str, PropertyValue<'raw>, RandomState>, base_id: i32, default_id: Option<i32>) -> Self {
         ModernBlockData {
-            kinds,
+            kinds: if kinds.is_empty() {
+                None
+            } else {
+                Some(kinds)
+            },
             base_id,
-            default_id
+            default_id,
         }
     }
 }
@@ -72,15 +82,9 @@ pub enum PropertyValue<'raw> {
 }
 
 impl<'raw> PropertyValue<'raw> {
-    pub fn bool() -> Self {
-        Self::Bool("bool")
-    }
+    pub fn bool() -> Self { Self::Bool("bool") }
 
-    pub fn enum_name(value: &'raw str) -> Self {
-        Self::Enum(value)
-    }
-    
-    pub fn range(start: u8, end: u8) -> Self {
-        Self::Range([start, end])
-    }
+    pub fn enum_name(value: &'raw str) -> Self { Self::Enum(value) }
+
+    pub fn range(start: u8, end: u8) -> Self { Self::Range([start, end]) }
 }

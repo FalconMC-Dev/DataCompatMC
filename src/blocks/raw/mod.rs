@@ -17,9 +17,7 @@ pub struct RawBlockData<'raw> {
 }
 
 impl<'raw> RawBlockData<'raw> {
-    pub fn property_count(&self) -> usize {
-        self.properties.len()
-    }
+    pub fn property_count(&self) -> usize { self.properties.len() }
 
     pub fn state_count(&self) -> usize {
         let mut number = 1;
@@ -29,12 +27,10 @@ impl<'raw> RawBlockData<'raw> {
         number
     }
 
-    pub fn properties<'b>(&'b self) -> impl Iterator<Item=(&'raw str, PropertyKind<'raw>)> + 'b {
+    pub fn properties<'b>(&'b self) -> impl Iterator<Item = (&'raw str, PropertyKind<'raw>)> + 'b {
         self.properties
             .iter()
-            .filter_map(|(name, values)| {
-                PropertyKind::try_from(values.as_slice()).ok().map(|property| (*name, property))
-            })
+            .filter_map(|(name, values)| PropertyKind::try_from(values.as_slice()).ok().map(|property| (*name, property)))
     }
 }
 
@@ -46,4 +42,3 @@ pub struct RawBlockState<'raw> {
     #[serde(default)]
     default: bool,
 }
-
