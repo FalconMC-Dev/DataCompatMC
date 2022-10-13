@@ -24,12 +24,14 @@ pub struct IntermediaryCommand {
     rules: Option<InputFile>,
     #[clap(short, long)]
     output: Option<OutputFile>,
+    /// The ID of the minecraft version the raw data comes from (e.g 2730)
     #[clap(long)]
-    version_id: Option<i32>,
+    id: Option<i32>,
+    /// The pretty display
     #[clap(long)]
-    version_name: Option<String>,
+    display_name: Option<String>,
     #[clap(long)]
-    /// Does not pretty-print the resulting json data
+    /// Does not pretty-print the resulting json data (e.g 1.17.1)
     no_pretty: bool,
 }
 
