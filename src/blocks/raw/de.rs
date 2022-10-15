@@ -91,7 +91,7 @@ impl<'a, 'raw, 'de: 'raw> Visitor<'de> for CompactRuleProvider<'a, 'raw> {
                                 None
                             }
                         })
-                        .ok_or(serde::de::Error::custom(format!("found a non-matching a property \"{}\" for \"{}\"", name, identifier)))?;
+                        .ok_or_else(|| serde::de::Error::custom(format!("found a non-matching a property \"{}\" for \"{}\"", name, identifier)))?;
                     match values.iter().position(|&x| x == value) {
                         Some(index) => {
                             factor *= prev_factor;

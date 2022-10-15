@@ -101,20 +101,17 @@ impl<'a, 'raw, 'de: 'raw> Visitor<'de> for CollisionRuleProvider<'a, 'raw> {
 
         while let Some((_, data)) = map.next_entry::<IgnoredAny, RawBlockData<'de>>()? {
             for (name, property) in self.transform(data.properties) {
-                match property {
-                    PropertyKind::Enum(property) => {
-                        if let Some(names) = by_values.get_mut(&property) {
-                            names.insert(name);
-                        } else {
-                            by_values.insert(property.clone(), AHashSet::from([name]));
-                        }
-                        if let Some(values) = by_name.get_mut(&name) {
-                            values.insert(property);
-                        } else {
-                            by_name.insert(name, AHashSet::from([property]));
-                        }
-                    },
-                    _ => {},
+                if let PropertyKind::Enum(property) = property {
+                    if let Some(names) = by_values.get_mut(&property) {
+                        names.insert(name);
+                    } else {
+                        by_values.insert(property.clone(), AHashSet::from([name]));
+                    }
+                    if let Some(values) = by_name.get_mut(&name) {
+                        values.insert(property);
+                    } else {
+                        by_name.insert(name, AHashSet::from([property]));
+                    }
                 }
             }
         }

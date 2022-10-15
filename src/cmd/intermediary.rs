@@ -59,11 +59,9 @@ impl IntermediaryCommand {
         eprintln!("No serious collisions found, slight inefficiencies will have been signaled by now. \u{2705}");
 
         // Compact data and print to output
-        let metadata = if let Some(id) = self.id {
-            Some(MetaData::new(id, self.display_name.as_deref(), self.note.as_deref()))
-        } else {
-            None
-        };
+        let metadata = self
+            .id
+            .map(|id| MetaData::new(id, self.display_name.as_deref(), self.note.as_deref()));
         let compacter = CompactRuleProvider::new(rules.as_ref(), metadata);
         let modern_data: ModernBlockList = compacter.deserialize(&mut Deserializer::from_str(data))?;
 

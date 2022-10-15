@@ -25,7 +25,7 @@ impl<'b, 'raw: 'b> TryFrom<&'b [&'raw str]> for PropertyKind<'raw> {
     type Error = PropertyKindParseError;
 
     fn try_from(values: &'b [&'raw str]) -> Result<Self, Self::Error> {
-        if let Some(&"true") = values.get(0) {
+        if let Some(&"true") = values.first() {
             if let Some(&"false") = values.get(1) {
                 if values.len() == 2 {
                     Ok(PropertyKind::Bool)
@@ -52,7 +52,7 @@ impl<'raw, 'de: 'raw> Deserialize<'de> for PropertyKind<'raw> {
         D: serde::Deserializer<'de>,
     {
         let values = <Vec<&'de str> as Deserialize>::deserialize(deserializer)?;
-        values.as_slice().try_into().map_err(|e| serde::de::Error::custom(e))
+        values.as_slice().try_into().map_err(serde::de::Error::custom)
     }
 }
 
@@ -69,6 +69,14 @@ impl<'raw> Display for PropertyKind<'raw> {
 impl<'raw> PropertyKind<'raw> {
     pub fn len(&self) -> usize {
         match self {
+            PropertyKind::Bool => 2,
+            PropertyKind::Int(range) => (range[1] - range[0] + 1) as usize,
+            PropertyKind::Enum(values) => values.fields().len(),
+        }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        0 == match self {
             PropertyKind::Bool => 2,
             PropertyKind::Int(range) => (range[1] - range[0] + 1) as usize,
             PropertyKind::Enum(values) => values.fields().len(),
@@ -97,9 +105,8 @@ impl<'raw> EnumProperty<'raw> {
 impl<'raw> From<Vec<&'raw str>> for EnumProperty<'raw> {
     fn from(values: Vec<&'raw str>) -> Self { Self { values } }
 }
-
-impl<'raw> Into<Vec<&'raw str>> for EnumProperty<'raw> {
-    fn into(self) -> Vec<&'raw str> { self.values }
+impl<'raw> From<EnumProperty<'raw>> for Vec<&'raw str> {
+    fn from(ep: EnumProperty<'raw>) -> Self { ep.values }
 }
 
 #[cfg(test)]
