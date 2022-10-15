@@ -4,14 +4,20 @@ use serde::de::{DeserializeSeed, Visitor};
 
 use super::property::PropertyKind;
 use super::RawBlockData;
+use crate::blocks::intermediary::MetaData;
 use crate::blocks::intermediary::data::{ModernBlockData, ModernBlockList, PropertyValue};
 use crate::blocks::intermediary::rules::ModernPropertyRules;
 use crate::util::identifier::Identifier;
 
-pub struct CompactRuleProvider<'a, 'raw>(Option<&'a ModernPropertyRules<'raw>>);
+pub struct CompactRuleProvider<'a, 'raw> {
+    pub rules: Option<&'a ModernPropertyRules<'raw>>,
+    pub metadata: Option<MetaData<'raw>>,
+}
 
 impl<'a, 'raw> CompactRuleProvider<'a, 'raw> {
-    pub fn new(rules: Option<&'a ModernPropertyRules<'raw>>) -> Self { Self(rules) }
+    pub fn new(rules: Option<&'a ModernPropertyRules<'raw>>, metadata: Option<MetaData<'raw>>) -> Self {
+        Self { rules, metadata }
+    }
 
     /// This transformation does two checks:
     /// - First it makes sure the property name is not `"type"`, this will get
@@ -28,7 +34,7 @@ impl<'a, 'raw> CompactRuleProvider<'a, 'raw> {
             } else {
                 name
             };
-            if let Some(rules) = self.0 {
+            if let Some(rules) = self.rules {
                 rules.transform(name, property)
             } else {
                 (name, property)
@@ -142,7 +148,7 @@ impl<'a, 'raw, 'de: 'raw> Visitor<'de> for CompactRuleProvider<'a, 'raw> {
                         PropertyKind::Bool => PropertyValue::bool(),
                         PropertyKind::Int([start, end]) => PropertyValue::range(start, end),
                         PropertyKind::Enum(_) => {
-                            if let Some(rules) = self.0 {
+                            if let Some(rules) = self.rules {
                                 PropertyValue::enum_name(rules.transform(name, kind).0)
                             } else {
                                 PropertyValue::enum_name(name)
@@ -156,7 +162,7 @@ impl<'a, 'raw, 'de: 'raw> Visitor<'de> for CompactRuleProvider<'a, 'raw> {
             blocks.insert(identifier, ModernBlockData::new(properties, base_id, default_id));
         }
 
-        Ok(ModernBlockList::new(todo!(), properties, blocks))
+        Ok(ModernBlockList::new(self.metadata, properties, blocks))
     }
 }
 

@@ -3,6 +3,7 @@ use clap::Args;
 use serde::de::DeserializeSeed;
 use serde_json::Deserializer;
 
+use crate::blocks::intermediary::MetaData;
 use crate::blocks::intermediary::collisions::{CollisionList, CollisionRuleProvider};
 use crate::blocks::intermediary::data::ModernBlockList;
 use crate::blocks::intermediary::rules::ModernPropertyRules;
@@ -28,8 +29,10 @@ pub struct IntermediaryCommand {
     #[clap(long)]
     id: Option<i32>,
     /// The pretty version number (e.g 1.17.1)
-    #[clap(long)]
+    #[clap(short = 'd', long, requires = "id")]
     display_name: Option<String>,
+    #[clap(long, requires = "id")]
+    note: Option<String>,
     #[clap(long)]
     /// Does not pretty-print the resulting json data
     no_pretty: bool,
@@ -56,7 +59,12 @@ impl IntermediaryCommand {
         eprintln!("No serious collisions found, slight inefficiencies will have been signaled by now. \u{2705}");
 
         // Compact data and print to output
-        let compacter = CompactRuleProvider::new(rules.as_ref());
+        let metadata = if let Some(id) = self.id {
+            Some(MetaData::new(id, self.display_name.as_deref(), self.note.as_deref()))
+        } else {
+            None
+        };
+        let compacter = CompactRuleProvider::new(rules.as_ref(), metadata);
         let modern_data: ModernBlockList = compacter.deserialize(&mut Deserializer::from_str(data))?;
 
         match &self.output {

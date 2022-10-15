@@ -25,7 +25,7 @@ pub type BlockList<'raw> = LinkedHashMap<Identifier<'raw>, ModernBlockData<'raw>
 ///   field.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ModernBlockList<'raw> {
-    #[serde(borrow)]
+    #[serde(borrow, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<MetaData<'raw>>,
     #[serde(borrow)]
     pub properties: PropertyList<'raw>,
@@ -52,7 +52,7 @@ impl<'raw> ModernBlockList<'raw> {
 pub struct ModernBlockData<'raw> {
     #[serde(borrow, skip_serializing_if = "LinkedHashMap::is_empty", rename = "properties")]
     #[serde(default)]
-    kinds: LinkedHashMap<&'raw str, PropertyValue<'raw>, RandomState>,
+    pub kinds: LinkedHashMap<&'raw str, PropertyValue<'raw>, RandomState>,
     #[serde(rename = "base")]
     pub base_id: i32,
     #[serde(skip_serializing_if = "Option::is_none", rename = "default")]
@@ -72,16 +72,15 @@ impl<'raw> ModernBlockData<'raw> {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum PropertyValue<'raw> {
-    Bool(&'raw str),
     Range([u8; 2]),
     #[serde(borrow)]
-    Enum(&'raw str),
+    Text(&'raw str),
 }
 
 impl<'raw> PropertyValue<'raw> {
-    pub fn bool() -> Self { Self::Bool("bool") }
+    pub fn bool() -> Self { Self::Text("bool") }
 
-    pub fn enum_name(value: &'raw str) -> Self { Self::Enum(value) }
+    pub fn enum_name(value: &'raw str) -> Self { Self::Text(value) }
 
     pub fn range(start: u8, end: u8) -> Self { Self::Range([start, end]) }
 }
