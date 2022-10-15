@@ -27,11 +27,11 @@ pub struct IntermediaryCommand {
     /// The ID of the minecraft version the raw data comes from (e.g 2730)
     #[clap(long)]
     id: Option<i32>,
-    /// The pretty display
+    /// The pretty version number (e.g 1.17.1)
     #[clap(long)]
     display_name: Option<String>,
     #[clap(long)]
-    /// Does not pretty-print the resulting json data (e.g 1.17.1)
+    /// Does not pretty-print the resulting json data
     no_pretty: bool,
 }
 
