@@ -14,7 +14,7 @@ pub struct ModernPropertyRules<'raw> {
 impl<'raw> ModernPropertyRules<'raw> {
     pub fn transform(&self, name: &'raw str, property: PropertyKind<'raw>) -> (&'raw str, PropertyKind<'raw>) {
         match &property {
-            PropertyKind::Enum(enum_property) => (self.rule_data.get(&enum_property).cloned().unwrap_or(name), property),
+            PropertyKind::Enum(enum_property) => (self.rule_data.get(enum_property).cloned().unwrap_or(name), property),
             _ => (name, property),
         }
     }

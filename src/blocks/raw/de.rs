@@ -15,7 +15,9 @@ pub struct CompactRuleProvider<'a, 'raw> {
 }
 
 impl<'a, 'raw> CompactRuleProvider<'a, 'raw> {
-    pub fn new(rules: Option<&'a ModernPropertyRules<'raw>>, metadata: Option<MetaData<'raw>>) -> Self { Self { rules, metadata } }
+    pub fn new(rules: Option<&'a ModernPropertyRules<'raw>>, metadata: Option<MetaData<'raw>>) -> Self {
+        Self { rules, metadata }
+    }
 
     /// This transformation does two checks:
     /// - First it makes sure the property name is not `"type"`, this will get
@@ -44,7 +46,9 @@ impl<'a, 'raw> CompactRuleProvider<'a, 'raw> {
 impl<'a, 'raw, 'de: 'raw> Visitor<'de> for CompactRuleProvider<'a, 'raw> {
     type Value = ModernBlockList<'raw>;
 
-    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result { formatter.write_str("a 1.13+ minecraft-generated block list") }
+    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        formatter.write_str("a 1.13+ minecraft-generated block list")
+    }
 
     /// This implementation verifies the data
     /// and makes sure it follows the expected pattern.
@@ -91,7 +95,7 @@ impl<'a, 'raw, 'de: 'raw> Visitor<'de> for CompactRuleProvider<'a, 'raw> {
                                 None
                             }
                         })
-                        .ok_or(serde::de::Error::custom(format!("found a non-matching a property \"{}\" for \"{}\"", name, identifier)))?;
+                        .ok_or_else(|| serde::de::Error::custom(format!("found a non-matching a property \"{}\" for \"{}\"", name, identifier)))?;
                     match values.iter().position(|&x| x == value) {
                         Some(index) => {
                             factor *= prev_factor;
@@ -142,17 +146,20 @@ impl<'a, 'raw, 'de: 'raw> Visitor<'de> for CompactRuleProvider<'a, 'raw> {
                     }
                 })
                 .map(|(name, kind)| {
-                    (name, match kind {
-                        PropertyKind::Bool => PropertyValue::bool(),
-                        PropertyKind::Int([start, end]) => PropertyValue::range(start, end),
-                        PropertyKind::Enum(_) => {
-                            if let Some(rules) = self.rules {
-                                PropertyValue::enum_name(rules.transform(name, kind).0)
-                            } else {
-                                PropertyValue::enum_name(name)
-                            }
+                    (
+                        name,
+                        match kind {
+                            PropertyKind::Bool => PropertyValue::bool(),
+                            PropertyKind::Int([start, end]) => PropertyValue::range(start, end),
+                            PropertyKind::Enum(_) => {
+                                if let Some(rules) = self.rules {
+                                    PropertyValue::enum_name(rules.transform(name, kind).0)
+                                } else {
+                                    PropertyValue::enum_name(name)
+                                }
+                            },
                         },
-                    })
+                    )
                 })
                 .collect();
 
