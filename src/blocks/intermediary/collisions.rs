@@ -26,9 +26,7 @@ pub struct CollisionList<'raw> {
 }
 
 impl<'raw> CollisionList<'raw> {
-    pub fn should_exit(&self) -> bool {
-        !self.by_name.is_empty()
-    }
+    pub fn should_exit(&self) -> bool { !self.by_name.is_empty() }
 
     /// Displays a summary of the different collisions found in the raw data.
     pub fn display(&self) {
@@ -61,9 +59,7 @@ pub struct CollisionRuleProvider<'a, 'raw>(Option<&'a ModernPropertyRules<'raw>>
 
 impl<'a, 'raw> CollisionRuleProvider<'a, 'raw> {
     /// Constructs a new `CollisionRuleProvider` given a set of rules
-    pub fn new(rules: Option<&'a ModernPropertyRules<'raw>>) -> Self {
-        Self(rules)
-    }
+    pub fn new(rules: Option<&'a ModernPropertyRules<'raw>>) -> Self { Self(rules) }
 
     /// This transformation does two checks:
     /// - First it makes sure the property name is not `"type"`, this will get
@@ -92,9 +88,7 @@ impl<'a, 'raw> CollisionRuleProvider<'a, 'raw> {
 impl<'a, 'raw, 'de: 'raw> Visitor<'de> for CollisionRuleProvider<'a, 'raw> {
     type Value = CollisionList<'raw>;
 
-    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-        formatter.write_str("a 1.13+ minecraft-generated block list")
-    }
+    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result { formatter.write_str("a 1.13+ minecraft-generated block list") }
 
     /// Simply collect all the properties and keep the ones
     /// that share either name or values

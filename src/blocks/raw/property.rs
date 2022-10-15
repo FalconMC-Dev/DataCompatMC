@@ -99,20 +99,14 @@ impl<'raw> EnumProperty<'raw> {
         }
     }
 
-    pub fn fields<'b>(&'b self) -> &'b [&'raw str] {
-        &self.values
-    }
+    pub fn fields<'b>(&'b self) -> &'b [&'raw str] { &self.values }
 }
 
 impl<'raw> From<Vec<&'raw str>> for EnumProperty<'raw> {
-    fn from(values: Vec<&'raw str>) -> Self {
-        Self { values }
-    }
+    fn from(values: Vec<&'raw str>) -> Self { Self { values } }
 }
 impl<'raw> From<EnumProperty<'raw>> for Vec<&'raw str> {
-    fn from(ep: EnumProperty<'raw>) -> Self {
-        ep.values
-    }
+    fn from(ep: EnumProperty<'raw>) -> Self { ep.values }
 }
 
 #[cfg(test)]
