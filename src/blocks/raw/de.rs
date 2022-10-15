@@ -4,9 +4,9 @@ use serde::de::{DeserializeSeed, Visitor};
 
 use super::property::PropertyKind;
 use super::RawBlockData;
-use crate::blocks::intermediary::MetaData;
 use crate::blocks::intermediary::data::{ModernBlockData, ModernBlockList, PropertyValue};
 use crate::blocks::intermediary::rules::ModernPropertyRules;
+use crate::blocks::intermediary::MetaData;
 use crate::util::identifier::Identifier;
 
 pub struct CompactRuleProvider<'a, 'raw> {
@@ -15,9 +15,7 @@ pub struct CompactRuleProvider<'a, 'raw> {
 }
 
 impl<'a, 'raw> CompactRuleProvider<'a, 'raw> {
-    pub fn new(rules: Option<&'a ModernPropertyRules<'raw>>, metadata: Option<MetaData<'raw>>) -> Self {
-        Self { rules, metadata }
-    }
+    pub fn new(rules: Option<&'a ModernPropertyRules<'raw>>, metadata: Option<MetaData<'raw>>) -> Self { Self { rules, metadata } }
 
     /// This transformation does two checks:
     /// - First it makes sure the property name is not `"type"`, this will get

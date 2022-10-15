@@ -1,7 +1,7 @@
 use anyhow::Result;
 use clap::Args;
 
-use crate::blocks::intermediary::data::{ModernBlockList, ModernBlockData, PropertyValue};
+use crate::blocks::intermediary::data::{ModernBlockData, ModernBlockList, PropertyValue};
 use crate::util::file::InputFile;
 
 #[derive(Args, Debug)]
@@ -62,7 +62,7 @@ impl InfoCommand {
                                 None => unknown.push(text.to_string()),
                             }
                         }
-                    }
+                    },
                 }
             }
             counter += state_count as i32;

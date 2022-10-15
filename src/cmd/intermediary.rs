@@ -3,10 +3,10 @@ use clap::Args;
 use serde::de::DeserializeSeed;
 use serde_json::Deserializer;
 
-use crate::blocks::intermediary::MetaData;
 use crate::blocks::intermediary::collisions::{CollisionList, CollisionRuleProvider};
 use crate::blocks::intermediary::data::ModernBlockList;
 use crate::blocks::intermediary::rules::ModernPropertyRules;
+use crate::blocks::intermediary::MetaData;
 use crate::blocks::raw::de::CompactRuleProvider;
 use crate::util::file::{InputFile, OutputFile};
 
