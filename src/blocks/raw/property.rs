@@ -18,7 +18,7 @@ pub enum PropertyKindParseError {
     #[error("First value was a boolean but second value was not")]
     BooleanInvalidType,
     #[error("Invalid integer value")]
-    IntError(#[from] ParseIntError)
+    IntError(#[from] ParseIntError),
 }
 
 impl<'b, 'raw: 'b> TryFrom<&'b [&'raw str]> for PropertyKind<'raw> {
@@ -71,7 +71,7 @@ impl<'raw> PropertyKind<'raw> {
         match self {
             PropertyKind::Bool => 2,
             PropertyKind::Int(range) => (range[1] - range[0] + 1) as usize,
-            PropertyKind::Enum(values) => values.fields().len()
+            PropertyKind::Enum(values) => values.fields().len(),
         }
     }
 }
@@ -91,23 +91,15 @@ impl<'raw> EnumProperty<'raw> {
         }
     }
 
-    pub fn fields<'b>(&'b self) -> &'b [&'raw str] {
-        &self.values
-    }
+    pub fn fields<'b>(&'b self) -> &'b [&'raw str] { &self.values }
 }
 
 impl<'raw> From<Vec<&'raw str>> for EnumProperty<'raw> {
-    fn from(values: Vec<&'raw str>) -> Self {
-        Self {
-            values,
-        }
-    }
+    fn from(values: Vec<&'raw str>) -> Self { Self { values } }
 }
 
 impl<'raw> Into<Vec<&'raw str>> for EnumProperty<'raw> {
-    fn into(self) -> Vec<&'raw str> {
-        self.values
-    }
+    fn into(self) -> Vec<&'raw str> { self.values }
 }
 
 #[cfg(test)]
@@ -121,11 +113,6 @@ mod tests {
         let values = vec!["value1", "value2"];
         let enum_property = EnumProperty::new(&values);
 
-        assert_de_tokens(&enum_property, &[
-            Token::Seq { len: Some(2) },
-            Token::BorrowedStr("value1"),
-            Token::BorrowedStr("value2"),
-            Token::SeqEnd,
-        ]);
+        assert_de_tokens(&enum_property, &[Token::Seq { len: Some(2) }, Token::BorrowedStr("value1"), Token::BorrowedStr("value2"), Token::SeqEnd]);
     }
 }

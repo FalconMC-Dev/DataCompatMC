@@ -15,7 +15,7 @@ impl<'raw> ModernPropertyRules<'raw> {
     pub fn transform(&self, name: &'raw str, property: PropertyKind<'raw>) -> (&'raw str, PropertyKind<'raw>) {
         match &property {
             PropertyKind::Enum(enum_property) => (self.rule_data.get(&enum_property).cloned().unwrap_or(name), property),
-            _ => (name, property)
+            _ => (name, property),
         }
     }
 }
@@ -23,10 +23,7 @@ impl<'raw> ModernPropertyRules<'raw> {
 impl<'raw> From<LinkedHashMap<&'raw str, EnumProperty<'raw>, RandomState>> for ModernPropertyRules<'raw> {
     fn from(other: LinkedHashMap<&'raw str, EnumProperty<'raw>, RandomState>) -> Self {
         Self {
-            rule_data: other.into_iter()
-                .map(|(name, values)| (values, name))
-                .collect(),
+            rule_data: other.into_iter().map(|(name, values)| (values, name)).collect(),
         }
     }
 }
-
